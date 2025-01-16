@@ -44,20 +44,48 @@ const Room = () => {
     },
     [socket]
   );
+  const sendStreams = useCallback(() => {
+    for (const track of myStream.getTracks()) {
+      peer.peer.addTrack(track, myStream);
+    }
+  }, [myStream]);
+  const handleCallAccepted = useCallback(
+    ({ from, ans }) => {
+      peer.setLocalDescription(ans);
+      console.log("Call Accepted!");
+      sendStreams();
+    },
+    [sendStreams]
+  );
+  const handleNegoNeeded = useCallback(async () => {
+    const offer = await peer.getOffer();
+    socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
+  }, [remoteSocketId, socket]);
 
+  useEffect(() => {
+    peer.peer.addEventListener("negotiationneeded", handleNegoNeeded);
+    return () => {
+      peer.peer.removeEventListener("negotiationneeded", handleNegoNeeded);
+    };
+  }, [handleNegoNeeded]);
+  
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
     socket.on("incoming-call", handleIncommingCall);
+    socket.on("call:accepted", handleCallAccepted);
     return () => {
       socket.off("user-joined", handleNewUserJoined);
       socket.off("incoming-call", handleIncommingCall);
+      socket.on("call:accepted", handleCallAccepted);
     };
-  }, [handleNewUserJoined,handleIncommingCall, socket]);
+  }, [handleNewUserJoined,handleIncommingCall,handleCallAccepted, socket]);
 
   return (
     <div>
       <h1>Room Page</h1>
       <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
+      {myStream && <button onClick={sendStreams}>Send Stream</button>}
+      
       {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
       {myStream && (
         <>
