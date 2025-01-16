@@ -69,16 +69,28 @@ const Room = () => {
     };
   }, [handleNegoNeeded]);
 
+
+  const handleNegoNeedIncomming = useCallback(
+    async ({ from, offer }) => {
+      const ans = await peer.getAnswer(offer);
+      socket.emit("peer-nego-done", { to: from, ans });
+    },
+    [socket]
+  );
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
     socket.on("incoming-call", handleIncommingCall);
     socket.on("call-accepted", handleCallAccepted);
+    socket.on("peer-nego-needed", handleNegoNeedIncomming);
+    
+
     return () => {
       socket.off("user-joined", handleNewUserJoined);
       socket.off("incoming-call", handleIncommingCall);
-      socket.on("call-accepted", handleCallAccepted);
+      socket.off("call-accepted", handleCallAccepted);
+      socket.off("peer-nego-needed", handleNegoNeedIncomming);
     };
-  }, [handleNewUserJoined, handleIncommingCall, handleCallAccepted, socket]);
+  }, [handleNewUserJoined, handleIncommingCall, handleCallAccepted, handleNegoNeedIncomming,socket]);
 
   return (
     <div>

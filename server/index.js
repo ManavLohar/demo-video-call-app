@@ -25,11 +25,11 @@ io.on("connection", (socket) => {
 
   socket.on("call-accepted", (data) => {
     const { to, ans } = data;
-    io.to(to).emit("call-accepted", { to: socket.id, ans });
+    io.to(to).emit("call-accepted", { from: socket.id, ans });
   });
 
   socket.on("peer-nego-needed", (data) => {
     const { offer, to } = data;
-    io.to(to).emit("peer-nego-needed", { offer, to: socket.id });
+    io.to(to).emit("peer-nego-needed", { offer, from: socket.id });
   });
 });
