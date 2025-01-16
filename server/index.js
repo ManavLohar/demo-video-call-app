@@ -27,4 +27,9 @@ io.on("connection", (socket) => {
     const { to, ans } = data;
     io.to(to).emit("call-accepted", { to: socket.id, ans });
   });
+
+  socket.on("peer-nego-needed", (data) => {
+    const { offer, to } = data;
+    io.to(to).emit("peer-nego-needed", { offer, to: socket.id });
+  });
 });
