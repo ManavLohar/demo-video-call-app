@@ -9,7 +9,11 @@ const socketIdToEmailMap = new Map();
 
 io.on("connection", (socket) => {
   console.log("Socket Connected", socket.id);
-  socket.on("join-room", ({ emailId, room }) => {
-    console.log("Joining room", emailId, room);
+  socket.on("join-room", (data) => {
+    const { email, room } = data;
+    emailToSocketIdMap.set(email, socket.id);
+    socketIdToEmailMap.set(socket.id, email);
+    socket.join(room);
+    io.to(socket.id).emit("join-room", data);
   });
 });
