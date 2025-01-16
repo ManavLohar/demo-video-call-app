@@ -6,7 +6,7 @@ import peer from "../Context/Peer";
 
 const Room = () => {
   const socket = useSocket();
-  
+
   const [remoteSocketId, setRemoteSocketId] = useState("");
   const [myStream, setMyStream] = useState("");
 
@@ -40,7 +40,7 @@ const Room = () => {
       setMyStream(stream);
       console.log(`Incoming Call`, from, offer);
       const ans = await peer.getAnswer(offer);
-      socket.emit("call:accepted", { to: from, ans });
+      socket.emit("call-accepted", { to: from, ans });
     },
     [socket]
   );

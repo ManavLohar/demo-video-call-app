@@ -22,4 +22,9 @@ io.on("connection", (socket) => {
     const { to, offer } = data;
     io.to(to).emit("incoming-call", { from: socket.id, offer });
   });
+
+  socket.on("call-accepted", (data) => {
+    const { to, ans } = data;
+    io.to(to).emit("call-accepted", { to: socket.id, ans });
+  });
 });
