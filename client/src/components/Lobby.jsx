@@ -8,12 +8,12 @@ function Lobby() {
   const [email,setEmail] =useState("")
   const [room,setRoom] =useState("")
 
-  useEffect(() => {
-      socket.on('joined-room', );
-      return () => {
-        socket.off('joined-room', );
-      }
-    },[socket])
+  // useEffect(() => {
+  //     socket.on('joined-room', );
+  //     return () => {
+  //       socket.off('joined-room', );
+  //     }
+  //   },[socket])
 
   const handleJoinRoom = () => {
     socket.emit("join-room",{emailId: email,room })
