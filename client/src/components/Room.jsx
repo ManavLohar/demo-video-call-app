@@ -1,22 +1,23 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
-import { useSocket } from '../Context/Socket'
-import { usePeer } from '../Context/Peer'
+import { useSocket } from "../Context/Socket";
+import { usePeer } from "../Context/Peer";
 
 const Room = () => {
-  const socket = useSocket()
+  const socket = useSocket();
   const { peer, createOffer } = usePeer();
-  const [remoteSocketId, setRemoteSocketId] = useState("")
-  const [myStream, setMyStream] = useState("")
-  
+  const [remoteSocketId, setRemoteSocketId] = useState("");
+  const [myStream, setMyStream] = useState("");
 
-
-  const handleNewUserJoined = useCallback(async (data) => {
-    const { email, id } = data;
-    console.log("user add", email);
-    console.log("user add", id);
-    setRemoteSocketId(id)
-  }, [socket]);
+  const handleNewUserJoined = useCallback(
+    async (data) => {
+      const { email, id } = data;
+      console.log("user add", email);
+      console.log("user add", id);
+      setRemoteSocketId(id);
+    },
+    [socket]
+  );
 
   const handleCallUser = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -24,20 +25,18 @@ const Room = () => {
       video: true,
     });
     const offer = await peer.getOffer();
-    socket.emit("user:call", { to: remoteSocketId, offer });
+    socket.emit("user-call", { to: remoteSocketId, offer });
     setMyStream(stream);
   }, [remoteSocketId, socket]);
 
   useEffect(() => {
-    socket.on("user-joined", handleNewUserJoined)
+    socket.on("user-joined", handleNewUserJoined);
     return () => {
-      socket.off("user-joined", handleNewUserJoined)
-    }
-  }, [handleNewUserJoined, socket])
+      socket.off("user-joined", handleNewUserJoined);
+    };
+  }, [handleNewUserJoined, socket]);
 
   return (
-    
-
     <div>
       <h1>Room Page</h1>
       <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
@@ -55,9 +54,8 @@ const Room = () => {
           />
         </>
       )}
-      
     </div>
-  )
-}
+  );
+};
 
-export default Room
+export default Room;
