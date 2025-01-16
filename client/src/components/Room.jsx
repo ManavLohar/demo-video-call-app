@@ -1,9 +1,61 @@
-import React from 'react'
+import React, { useCallback, useEffect, useState } from "react";
+import ReactPlayer from "react-player";
+import { useSocket } from '../Context/Socket'
+import { usePeer } from '../Context/Peer'
 
 const Room = () => {
+  const socket = useSocket()
+  const { peer, createOffer } = usePeer();
+  const [remoteSocketId, setRemoteSocketId] = useState("")
+  const [myStream, setMyStream] = useState("")
+  
+
+
+  const handleNewUserJoined = useCallback(async (data) => {
+    const { email, id } = data;
+    console.log("user add", email);
+    console.log("user add", id);
+    setRemoteSocketId(id)
+  }, [socket]);
+
+  const handleCallUser = useCallback(async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
+    const offer = await peer.getOffer();
+    socket.emit("user:call", { to: remoteSocketId, offer });
+    setMyStream(stream);
+  }, [remoteSocketId, socket]);
+
+  useEffect(() => {
+    socket.on("user-joined", handleNewUserJoined)
+    return () => {
+      socket.off("user-joined", handleNewUserJoined)
+    }
+  }, [handleNewUserJoined, socket])
+
   return (
+    
+
     <div>
-      Hello 
+      <h1>Room Page</h1>
+      <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
+      {myStream && <button onClick={sendStreams}>Send Stream</button>}
+      {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
+      {myStream && (
+        <>
+          <h1>My Stream</h1>
+          <ReactPlayer
+            playing
+            muted
+            height="100px"
+            width="200px"
+            url={myStream}
+          />
+        </>
+      )}
+      
     </div>
   )
 }
