@@ -69,7 +69,6 @@ const Room = () => {
     };
   }, [handleNegoNeeded]);
 
-
   const handleNegoNeedIncomming = useCallback(
     async ({ from, offer }) => {
       const ans = await peer.getAnswer(offer);
@@ -82,7 +81,6 @@ const Room = () => {
     socket.on("incoming-call", handleIncommingCall);
     socket.on("call-accepted", handleCallAccepted);
     socket.on("peer-nego-needed", handleNegoNeedIncomming);
-    
 
     return () => {
       socket.off("user-joined", handleNewUserJoined);
@@ -90,7 +88,13 @@ const Room = () => {
       socket.off("call-accepted", handleCallAccepted);
       socket.off("peer-nego-needed", handleNegoNeedIncomming);
     };
-  }, [handleNewUserJoined, handleIncommingCall, handleCallAccepted, handleNegoNeedIncomming,socket]);
+  }, [
+    handleNewUserJoined,
+    handleIncommingCall,
+    handleCallAccepted,
+    handleNegoNeedIncomming,
+    socket,
+  ]);
 
   return (
     <div>

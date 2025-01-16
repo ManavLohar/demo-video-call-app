@@ -32,4 +32,9 @@ io.on("connection", (socket) => {
     const { offer, to } = data;
     io.to(to).emit("peer-nego-needed", { offer, from: socket.id });
   });
+
+  socket.on("peer-nego-done", (data) => {
+    const { to, ans } = data;
+    io.to(to).emit("peer-nego-final", { ans, from: socket.id });
+  });
 });
