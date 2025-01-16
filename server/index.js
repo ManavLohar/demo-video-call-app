@@ -13,4 +13,3 @@ io.on("connection", (socket) => {
     console.log("Joining room", emailId, room);
   });
 });
-
