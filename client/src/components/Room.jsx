@@ -30,12 +30,29 @@ const Room = () => {
     setMyStream(stream);
   }, [remoteSocketId, socket]);
 
+  const handleIncommingCall = useCallback(
+    async ({ from, offer }) => {
+      setRemoteSocketId(from);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      setMyStream(stream);
+      console.log(`Incoming Call`, from, offer);
+      const ans = await peer.getAnswer(offer);
+      socket.emit("call:accepted", { to: from, ans });
+    },
+    [socket]
+  );
+
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
+    socket.on("incoming-call", handleIncommingCall);
     return () => {
       socket.off("user-joined", handleNewUserJoined);
+      socket.off("incoming-call", handleIncommingCall);
     };
-  }, [handleNewUserJoined, socket]);
+  }, [handleNewUserJoined,handleIncommingCall, socket]);
 
   return (
     <div>
@@ -48,8 +65,8 @@ const Room = () => {
           <ReactPlayer
             playing
             muted
-            height="100px"
-            width="200px"
+            height="300px"
+            width="400px"
             url={myStream}
           />
         </>
