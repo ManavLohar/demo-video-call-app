@@ -9,6 +9,7 @@ const Room = () => {
 
   const [remoteSocketId, setRemoteSocketId] = useState("");
   const [myStream, setMyStream] = useState("");
+  const [remoteStream, setRemoteStream] = useState();
 
   const handleNewUserJoined = useCallback(
     async (data) => {
@@ -76,23 +77,38 @@ const Room = () => {
     },
     [socket]
   );
+  const handleNegoNeedFinal = useCallback(async ({ ans }) => {
+    await peer.setLocalDescription(ans);
+  }, []);
+
+  useEffect(() => {
+    peer.peer.addEventListener("track", async (ev) => {
+      const remoteStream = ev.streams;
+      console.log("GOT TRACKS!!");
+      setRemoteStream(remoteStream[0]);
+    });
+  }, []);
+  
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
     socket.on("incoming-call", handleIncommingCall);
     socket.on("call-accepted", handleCallAccepted);
     socket.on("peer-nego-needed", handleNegoNeedIncomming);
+    socket.on("peer-nego-final", handleNegoNeedFinal);
 
     return () => {
       socket.off("user-joined", handleNewUserJoined);
       socket.off("incoming-call", handleIncommingCall);
       socket.off("call-accepted", handleCallAccepted);
       socket.off("peer-nego-needed", handleNegoNeedIncomming);
+      socket.off("peer-nego-final", handleNegoNeedFinal);
     };
   }, [
     handleNewUserJoined,
     handleIncommingCall,
     handleCallAccepted,
     handleNegoNeedIncomming,
+    handleNegoNeedFinal,
     socket,
   ]);
 
