@@ -4,13 +4,12 @@ import Lobby from "./components/Lobby";
 import Room from "./components/Room";
 import {Routes,Route} from 'react-router-dom'
 import { SocketProvider } from "./Context/Socket";
-import { PeerProvider } from "./Context/Peer";
 
 function App() {
   return (
     <>
     <SocketProvider>
-    <PeerProvider>
+    
     <Routes>
     
   
@@ -19,7 +18,7 @@ function App() {
     <Route path='/room/:room' element={<Room/>} />
     
   </Routes>
-  </PeerProvider>
+  
   </SocketProvider>
       
     </>

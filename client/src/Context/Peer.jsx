@@ -1,32 +1,31 @@
-import React, { useMemo } from "react";
-
-const PeerContext = React.createContext(null);
-
-export const usePeer = () => React.useContext(PeerContext);
-
-export const PeerProvider = (props) => { 
-    
-    const peer = useMemo(() => new RTCPeerConnection({
-        iceServers: [
+class PeerService {
+    constructor() {
+      if (!this.peer) {
+        this.peer = new RTCPeerConnection({
+          iceServers: [
             {
-                urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:global.stun.twilio.com:3478",
-                ],
+              urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:global.stun.twilio.com:3478",
+              ],
             },
-        ],
-    }), []);
-
-    const createOffer = async () => {
-        const offer = await peer.createOffer();
-        await peer.setLocalDescription(offer);
-        return offer;
-    };
-
+          ],
+        });
+      }
+    }
+  
     
-    return (
-        <PeerContext.Provider value={{ peer, createOffer }}>
-            {props.children}
-        </PeerContext.Provider>
-    );
-};
+  
+    
+  
+    async getOffer() {
+      if (this.peer) {
+        const offer = await this.peer.createOffer();
+        await this.peer.setLocalDescription(new RTCSessionDescription(offer));
+        return offer;
+      }
+    }
+  }
+  
+  export default new PeerService();
+  
