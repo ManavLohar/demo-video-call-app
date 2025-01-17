@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { useState, useEffect } from "react";
-import { useSocket } from "../Context/Socket";
+import { useSocket } from "../../../Context/Socket";
 import { useNavigate } from 'react-router-dom'
 
 function Lobby() {

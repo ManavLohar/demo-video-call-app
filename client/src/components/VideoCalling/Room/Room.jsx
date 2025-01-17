@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
+import styles from "./Room.module.scss";
 import ReactPlayer from "react-player";
-import { useSocket } from "../Context/Socket";
+import { useSocket } from "../../../Context/Socket";
 //import { usePeer } from "../Context/Peer";
-import peer from "../Context/Peer";
+import peer from "../../../Context/Peer";
+import { MdCallEnd } from "react-icons/md";
+import { FaVideo, FaVideoSlash } from "react-icons/fa";
+import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 
 const Room = () => {
   const socket = useSocket();
@@ -16,8 +20,6 @@ const Room = () => {
   const handleNewUserJoined = useCallback(
     async (data) => {
       const { email, id } = data;
-      console.log("user add", email);
-      console.log("user add", id);
       setRemoteSocketId(id);
     },
     [socket]
@@ -92,7 +94,7 @@ const Room = () => {
   }, []);
 
   const handleHangUp = useCallback(async ({ from }) => {
-    console.log(`Call Ended from ${from}!`);
+    alert(`Call Ended!`);
   }, []);
 
   useEffect(() => {
@@ -146,42 +148,54 @@ const Room = () => {
   }, [myStream, remoteSocketId, socket]);
 
   return (
-    <div>
-      <h1>Room Page</h1>
-      <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
-      {myStream && <button onClick={sendStreams}>Send Stream</button>}
-
-      {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
-      {myStream && (
-        <>
-          <h1>My Stream</h1>
-          <ReactPlayer
-            playing
-            muted
-            height="300px"
-            width="400px"
-            url={myStream}
-          />
-          <button onClick={toggleVideo}>
-            {isVideoOn ? "Turn Off Video" : "Turn On Video"}
-          </button>
-          <button onClick={toggleAudio}>
-            {isAudioOn ? "Turn Off Audio" : "Turn On Audio"}
-          </button>
-          <button onClick={hangUp}>Hang Up</button>
-        </>
-      )}
-      {remoteStream && (
-        <>
-          <h1>Remote Stream</h1>
-          <ReactPlayer
-            playing
-            height="300px"
-            width="400px"
-            url={remoteStream}
-          />
-        </>
-      )}
+    <div className={styles.room}>
+      <div className={styles.header}>
+        <h1>Room Page</h1>
+      </div>
+      <div className={styles.roomBox}>
+        <div className={styles.sidebar}>
+          <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
+          {myStream && <button onClick={sendStreams}>Send Stream</button>}
+          {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
+        </div>
+        <div className={styles.streamingArea}>
+          {myStream && (
+            <div className={styles.myStream}>
+              <ReactPlayer
+                playing
+                muted
+                height="250px"
+                width="350px"
+                url={myStream}
+              />
+            </div>
+          )}
+          {remoteStream && (
+            <div className={styles.remoteStream}>
+              <ReactPlayer
+                playing
+                // height="300px"
+                // width="400px"
+                url={remoteStream}
+                muted
+              />
+            </div>
+          )}
+          {myStream && (
+            <div className={styles.streamButtons}>
+              <button onClick={toggleVideo}>
+                {isVideoOn ? <FaVideoSlash /> : <FaVideo />}
+              </button>
+              <button onClick={toggleAudio}>
+                {isAudioOn ? <HiSpeakerXMark /> : <HiSpeakerWave />}
+              </button>
+              <button onClick={hangUp}>
+                <MdCallEnd />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
