@@ -10,6 +10,8 @@ const Room = () => {
   const [remoteSocketId, setRemoteSocketId] = useState("");
   const [myStream, setMyStream] = useState("");
   const [remoteStream, setRemoteStream] = useState();
+  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isAudioOn, setIsAudioOn] = useState(true);
 
   const handleNewUserJoined = useCallback(
     async (data) => {
@@ -88,13 +90,18 @@ const Room = () => {
       setRemoteStream(remoteStream[0]);
     });
   }, []);
-  
+
+  const handleHangUp = useCallback(async ({ from }) => {
+    console.log(`Call Ended from ${from}!`);
+  }, []);
+
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
     socket.on("incoming-call", handleIncommingCall);
     socket.on("call-accepted", handleCallAccepted);
     socket.on("peer-nego-needed", handleNegoNeedIncomming);
     socket.on("peer-nego-final", handleNegoNeedFinal);
+    socket.on("user-hangup", handleHangUp);
 
     return () => {
       socket.off("user-joined", handleNewUserJoined);
@@ -102,6 +109,7 @@ const Room = () => {
       socket.off("call-accepted", handleCallAccepted);
       socket.off("peer-nego-needed", handleNegoNeedIncomming);
       socket.off("peer-nego-final", handleNegoNeedFinal);
+      socket.off("user-hangup", handleHangUp);
     };
   }, [
     handleNewUserJoined,
@@ -109,8 +117,33 @@ const Room = () => {
     handleCallAccepted,
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
+    handleHangUp,
     socket,
   ]);
+
+  const toggleVideo = useCallback(() => {
+    if (myStream) {
+      myStream.getVideoTracks()[0].enabled = !isVideoOn;
+      setIsVideoOn(!isVideoOn);
+    }
+  }, [myStream, isVideoOn]);
+
+  const toggleAudio = useCallback(() => {
+    if (myStream) {
+      myStream.getAudioTracks()[0].enabled = !isAudioOn;
+      setIsAudioOn(!isAudioOn);
+    }
+  }, [myStream, isAudioOn]);
+
+  const hangUp = useCallback(() => {
+    if (myStream) {
+      myStream.getTracks().forEach((track) => track.stop());
+      setMyStream(null);
+      setRemoteStream(null);
+      setRemoteSocketId(null);
+      socket.emit("user-hangup", { to: remoteSocketId });
+    }
+  }, [myStream, remoteSocketId, socket]);
 
   return (
     <div>
@@ -128,6 +161,24 @@ const Room = () => {
             height="300px"
             width="400px"
             url={myStream}
+          />
+          <button onClick={toggleVideo}>
+            {isVideoOn ? "Turn Off Video" : "Turn On Video"}
+          </button>
+          <button onClick={toggleAudio}>
+            {isAudioOn ? "Turn Off Audio" : "Turn On Audio"}
+          </button>
+          <button onClick={hangUp}>Hang Up</button>
+        </>
+      )}
+      {remoteStream && (
+        <>
+          <h1>Remote Stream</h1>
+          <ReactPlayer
+            playing
+            height="300px"
+            width="400px"
+            url={remoteStream}
           />
         </>
       )}

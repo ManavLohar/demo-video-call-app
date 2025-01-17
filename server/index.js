@@ -37,4 +37,9 @@ io.on("connection", (socket) => {
     const { to, ans } = data;
     io.to(to).emit("peer-nego-final", { ans, from: socket.id });
   });
+
+  socket.on("user-hangup", (data) => {
+    const { to } = data;
+    io.to(to).emit("user-hangup", { from: socket.id });
+  });
 });
