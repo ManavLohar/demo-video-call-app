@@ -4,7 +4,7 @@ import ReactPlayer from "react-player";
 import { useSocket } from "../../../Context/Socket";
 //import { usePeer } from "../Context/Peer";
 import peer from "../../../Context/Peer";
-import { MdCallEnd } from "react-icons/md";
+import { MdCall, MdCallEnd } from "react-icons/md";
 import { FaVideo, FaVideoSlash } from "react-icons/fa";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 
@@ -155,8 +155,18 @@ const Room = () => {
       <div className={styles.roomBox}>
         <div className={styles.sidebar}>
           <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
-          {myStream && <button onClick={sendStreams}>Send Stream</button>}
-          {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
+          <div className={styles.sidebarButtons}>
+            {myStream && (
+              <button onClick={sendStreams}>
+                Send Stream <FaVideo />
+              </button>
+            )}
+            {remoteSocketId && (
+              <button onClick={handleCallUser}>
+                CALL <MdCall />
+              </button>
+            )}
+          </div>
         </div>
         <div className={styles.streamingArea}>
           {myStream && (
@@ -177,7 +187,6 @@ const Room = () => {
                 // height="300px"
                 // width="400px"
                 url={remoteStream}
-                muted
               />
             </div>
           )}

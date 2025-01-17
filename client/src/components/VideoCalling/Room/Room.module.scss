@@ -24,6 +24,32 @@
       padding: 2rem 1rem;
       > h4 {
         color: white;
+        font-size: 1.2rem;
+      }
+      .sidebarButtons {
+        display: flex;
+        gap: 5px;
+        margin-top: 1rem;
+        > button {
+          padding: 5px;
+          border: none;
+          outline: none;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+
+          &:nth-of-type(1) {
+            background-color: blue;
+            color: white;
+          }
+
+          &:nth-of-type(2) {
+            background-color: green;
+            color: white;
+          }
+        }
       }
     }
     .streamingArea {
@@ -84,7 +110,7 @@
           color: rgb(83, 83, 83);
         }
         > button:nth-of-type(3) {
-          background-color: rgb(134, 47, 47);
+          background-color: rgb(179, 17, 17);
           color: white;
         }
       }
