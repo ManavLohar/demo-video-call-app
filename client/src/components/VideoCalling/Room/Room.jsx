@@ -157,12 +157,12 @@ const Room = () => {
           <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
           <div className={styles.sidebarButtons}>
             {myStream && (
-              <button onClick={sendStreams}>
+              <button onClick={sendStreams} className={styles.sendStreamsBtn}>
                 Send Stream <FaVideo />
               </button>
             )}
             {remoteSocketId && (
-              <button onClick={handleCallUser}>
+              <button onClick={handleCallUser} className={styles.callBtn}>
                 CALL <MdCall />
               </button>
             )}
@@ -193,10 +193,10 @@ const Room = () => {
           {myStream && (
             <div className={styles.streamButtons}>
               <button onClick={toggleVideo}>
-                {isVideoOn ? <FaVideoSlash /> : <FaVideo />}
+                {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
               </button>
               <button onClick={toggleAudio}>
-                {isAudioOn ? <HiSpeakerXMark /> : <HiSpeakerWave />}
+                {isAudioOn ? <HiSpeakerWave /> : <HiSpeakerXMark />}
               </button>
               <button onClick={hangUp}>
                 <MdCallEnd />

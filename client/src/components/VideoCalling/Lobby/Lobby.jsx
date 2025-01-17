@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { useState, useEffect } from "react";
 import { useSocket } from "../../../Context/Socket";
 import { useNavigate } from 'react-router-dom'
-
+import styles from "./Lobby.module.scss";
 function Lobby() {
   const [email, setEmail] = useState("");
   const [room, setRoom] = useState("");
@@ -33,36 +33,44 @@ function Lobby() {
   );
 
   return (
-    <div>
+    <div className={styles.lobbyContainer}>
+      <div className={styles.lobbyBox}>
+      <h2>Join a Meeting</h2>
       <form>
-        <label htmlFor="email">Email:</label>
+        
         <input
           type="email"
           id="email"
           name="email"
+          placeholder="Enter your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          className={styles.input}
         />
-        <br />
-        <br />
+       
+        
 
-        <label htmlFor="roomId">Room ID:</label>
+        
         <input
           type="text"
           id="roomId"
           name="roomId"
+           placeholder="Enter Room ID"
           value={room}
           onChange={(e) => setRoom(e.target.value)}
           required
+          className={styles.input}
+          
         />
-        <br />
-        <br />
+        
+       
 
-        <button onClick={handleSubmit} type="submit">
-          Join
+        <button onClick={handleSubmit} type="submit" className={styles.button}>
+        Join Meeting
         </button>
       </form>
+    </div>
     </div>
   );
 }
