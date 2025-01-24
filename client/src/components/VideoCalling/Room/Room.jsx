@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import styles from "./Room.module.scss";
 import ReactPlayer from "react-player";
 import { useSocket } from "../../../Context/Socket";
@@ -16,10 +16,14 @@ const Room = () => {
   const [remoteStream, setRemoteStream] = useState();
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
+  const [incomingCall, setIncomingCall] = useState(null);
+
+  const myVideoRef = useRef(null);
 
   const handleNewUserJoined = useCallback(
     async (data) => {
       const { email, id } = data;
+      
       setRemoteSocketId(id);
     },
     [socket]
@@ -35,20 +39,37 @@ const Room = () => {
     setMyStream(stream);
   }, [remoteSocketId, socket]);
 
-  const handleIncommingCall = useCallback(
-    async ({ from, offer }) => {
-      setRemoteSocketId(from);
+  const handleIncommingCall = useCallback(async ({ from, offer }) => {
+    // Save Incoming Call Info in State
+    setIncomingCall({ from, offer });
+  }, []);
+
+  const acceptCall = async () => {
+    if (!incomingCall) return;
+
+    setRemoteSocketId(incomingCall.from);
+
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: true,
       });
       setMyStream(stream);
-      console.log(`Incoming Call`, from, offer);
-      const ans = await peer.getAnswer(offer);
-      socket.emit("call-accepted", { to: from, ans });
-    },
-    [socket]
-  );
+      console.log(`Incoming Call Accepted:`, incomingCall.from);
+
+      const ans = await peer.getAnswer(incomingCall.offer);
+      socket.emit("call-accepted", { to: incomingCall.from, ans });
+    } catch (error) {
+      console.error("Error getting media devices", error);
+    } finally {
+      setIncomingCall(null); // Clear State After Handling
+    }
+  };
+
+  const rejectCall = () => {
+    console.log("Call Rejected!");
+    setIncomingCall(null); // Reset State
+  };
   const sendStreams = useCallback(() => {
     for (const track of myStream.getTracks()) {
       peer.peer.addTrack(track, myStream);
@@ -165,6 +186,13 @@ const Room = () => {
               <button onClick={handleCallUser} className={styles.callBtn}>
                 CALL <MdCall />
               </button>
+            )}
+            {incomingCall && (
+              <div className={styles.AcceptBtn}>
+                <p>{incomingCall.from} is calling...</p>
+                <button onClick={acceptCall}>Accept</button>
+                <button onClick={rejectCall}>Reject</button>
+              </div>
             )}
           </div>
         </div>
