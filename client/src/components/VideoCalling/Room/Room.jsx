@@ -24,6 +24,7 @@ const Room = () => {
   const [screenShareStream, setScreenShareStream] = useState();
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [originalVideoTrack, setOriginalVideoTrack] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
 
   const handleNewUserJoined = useCallback(
     async (data) => {
@@ -46,17 +47,45 @@ const Room = () => {
   const handleIncommingCall = useCallback(
     async ({ from, offer }) => {
       setRemoteSocketId(from);
+      // const stream = await navigator.mediaDevices.getUserMedia({
+      //   audio: true,
+      //   video: true,
+      // });
+      setIncomingCall({ from, offer });
+      // setMyStream(stream);
+      console.log(`Incoming Call`, from, offer);
+      // const ans = await peer.getAnswer(offer);
+      // socket.emit("call-accepted", { to: from, ans });
+    },
+    [socket]
+  );
+
+  const acceptCall = async () => {
+    if (!incomingCall) return;
+
+    setRemoteSocketId(incomingCall.from);
+
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: true,
       });
       setMyStream(stream);
-      console.log(`Incoming Call`, from, offer);
-      const ans = await peer.getAnswer(offer);
-      socket.emit("call-accepted", { to: from, ans });
-    },
-    [socket]
-  );
+      console.log(`Incoming Call Accepted:`, incomingCall.from);
+
+      const ans = await peer.getAnswer(incomingCall.offer);
+      socket.emit("call-accepted", { to: incomingCall.from, ans });
+    } catch (error) {
+      console.error("Error getting media devices", error);
+    } finally {
+      setIncomingCall(null); // Clear State After Handling
+    }
+  };
+
+  const rejectCall = () => {
+    console.log("Call Rejected!");
+    setIncomingCall(null); // Reset State
+  };
 
   const sendStreams = useCallback(() => {
     for (const track of myStream.getTracks()) {
@@ -72,6 +101,7 @@ const Room = () => {
     },
     [sendStreams]
   );
+
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.getOffer();
     if (screenShareStream) {
@@ -318,6 +348,13 @@ const Room = () => {
               <button onClick={handleCallUser} className={styles.callBtn}>
                 CALL <MdCall />
               </button>
+            )}
+            {incomingCall && (
+              <div className={styles.AcceptBtn}>
+                <p>{incomingCall.from} is calling...</p>
+                <button onClick={acceptCall}>Accept</button>
+                <button onClick={rejectCall}>Reject</button>
+              </div>
             )}
           </div>
         </div>
