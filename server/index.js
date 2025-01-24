@@ -1,6 +1,22 @@
 const { Server } = require("socket.io");
+const express = require("express");
+const path = require("path");
+const { log } = require("console");
 
-const io = new Server(8000, {
+const app = express();
+const port = 8000;
+
+// app.use(express.static(path.join(__dirname, "public", "dist")));
+
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "dist", "index.html"));
+// });
+
+// const server = app.listen(port, () => {
+//   log(`Server is running on port ${port}`);
+// });
+
+const io = new Server(port, {
   cors: true,
 });
 
