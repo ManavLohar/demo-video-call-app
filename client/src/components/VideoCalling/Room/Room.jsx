@@ -21,7 +21,7 @@ const Room = () => {
   const [remoteStream, setRemoteStream] = useState();
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
-  const [screenShareStream, setScreenShareStream] = useState();
+  const [screenShareStream, setScreenShareStream] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [originalVideoTrack, setOriginalVideoTrack] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
@@ -134,7 +134,7 @@ const Room = () => {
   }, [handleNegoNeeded]);
 
   const handleNegoNeedIncomming = useCallback(
-    async ({ from, offer }) => {
+    async ({ from, offer, streamId }) => {
       setRemoteSocketId(from);
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -143,23 +143,36 @@ const Room = () => {
 
       setMyStream(stream);
       const ans = await peer.getAnswer(offer);
-      socket.emit("peer-nego-done", { to: from, ans });
+      socket.emit("peer-nego-done", { to: from, ans, streamId });
 
       peer.peer.addEventListener("track", async (ev) => {
-        const remoteStream = ev.streams;
-        setRemoteStream(remoteStream[0]);
+        const streams = ev.streams;
+        if (remoteStream) {
+          // If there are multiple streams, assume the first one is the video stream
+          // and the second one is the screen sharing stream
+          // setRemoteStream(remoteStream[0]);
+          setScreenShareStream(streams[0]);
+        } else {
+          // If there is only one stream, assume it's the video stream
+          setRemoteStream(streams[0]);
+        }
+        console.log("Remote Stream: ", streams.getTracks());
       });
     },
     [socket]
   );
 
-  const handleNegoNeedFinal = useCallback(async ({ ans }) => {
+  const handleNegoNeedFinal = useCallback(async ({ ans, streamId }) => {
     await peer.setLocalDescription(ans);
 
     peer.peer.addEventListener("track", async (ev) => {
-      const remoteStream = ev.streams;
-      console.log("remoteStresm: ", remoteStream);
-      setRemoteStream(remoteStream[0]);
+      const streams = ev.streams;
+      if (remoteStream) {
+        setScreenShareStream(streams[0]);
+      } else {
+        setRemoteStream(streams[0]);
+      }
+      console.log("remoteStream: ", remoteStream);
     });
   }, []);
 
@@ -171,9 +184,20 @@ const Room = () => {
     });
   }, []);
 
-  const handleHangUp = useCallback(async ({ from }) => {
-    alert(`Call Ended!`);
-  }, []);
+  const handleHangUp = useCallback(
+    async ({ from }) => {
+      alert(`Call Ended!`);
+      if (remoteStream) {
+        remoteStream.getTracks().forEach((track) => track.stop());
+      }
+      setRemoteStream(null);
+      setMyStream(null);
+      setIsScreenSharing(false);
+      setScreenShareStream(null);
+      setRemoteSocketId(null);
+    },
+    [remoteStream]
+  );
 
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
@@ -243,48 +267,38 @@ const Room = () => {
   const hangUp = useCallback(() => {
     if (myStream) {
       myStream.getTracks().forEach((track) => track.stop());
-      setMyStream(null);
-      setRemoteStream(null);
-      setRemoteSocketId(null);
-      if (screenShareStream) {
-        screenShareStream.getTracks().forEach((track) => track.stop());
-        setScreenShareStream(null);
-        setIsScreenSharing(false);
-      }
-      if (originalVideoTrack) {
-        originalVideoTrack.stop();
-        setOriginalVideoTrack(null);
-      }
-      socket.emit("user-hangup", { to: remoteSocketId });
     }
-  }, [myStream, remoteSocketId, socket, screenShareStream, originalVideoTrack]);
+    if (screenShareStream) {
+      screenShareStream.getTracks().forEach((track) => track.stop());
+    }
+    setMyStream(null);
+    setRemoteStream(null);
+    setScreenShareStream(null);
+    setIsScreenSharing(false);
+    setRemoteSocketId(null);
+    socket.emit("user-hangup", { to: remoteSocketId });
+  }, [myStream, remoteSocketId, socket, screenShareStream]);
 
   const toggleScreenStream = useCallback(async () => {
     if (isScreenSharing) {
-      if (screenShareStream) {
-        screenShareStream.getTracks().forEach((track) => track.stop());
-        setScreenShareStream(null);
-        setIsScreenSharing(false);
+      screenShareStream.getTracks().forEach((track) => track.stop());
+      setScreenShareStream(null);
+      setIsScreenSharing(false);
 
-        const newVideoTrack = myStream.getVideoTracks()[0];
-        newVideoTrack.enabled = true;
-        setIsVideoOn(true);
-
-        const senders = peer.peer.getSenders();
-        const videoSender = senders.find(
-          (sender) => sender.track.kind === "video"
-        );
-
-        if (videoSender && originalVideoTrack) {
-          videoSender.replaceTrack(originalVideoTrack);
-          myStream.getTracks().forEach((track) => {
-            if (track.kind === "video") {
-              track.stop();
-            }
-          });
-          myStream.addTrack(originalVideoTrack);
-        }
+      const senders = peer.peer.getSenders();
+      const videoSender = senders.find(
+        (sender) => sender.track.kind === "video"
+      );
+      if (videoSender) {
+        videoSender.replaceTrack(myStream.getVideoTracks()[0]);
       }
+
+      const offer = await peer.getOffer();
+      socket.emit("peer-nego-needed", { offer, to: remoteSocketId });
+
+      // Replace remoteStream with previous remoteStream
+      const previousRemoteStream = remoteStream;
+      setRemoteStream(previousRemoteStream);
     } else {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -292,37 +306,36 @@ const Room = () => {
         });
         setScreenShareStream(screenStream);
         setIsScreenSharing(true);
+        console.log(screenStream);
 
-        const newVideoTrack = screenStream.getVideoTracks()[0];
-        newVideoTrack.enabled = true;
-        setIsVideoOn(true);
+        for (const track of screenStream.getTracks()) {
+          peer.peer.addTrack(track, screenStream);
+        }
 
         const senders = peer.peer.getSenders();
         const videoSender = senders.find(
           (sender) => sender.track.kind === "video"
         );
         if (videoSender) {
-          setOriginalVideoTrack(videoSender.track);
-          const videoTrack = screenStream.getVideoTracks()[0];
-          if (videoTrack) {
-            videoSender.replaceTrack(videoTrack);
-            myStream.getTracks().forEach((track) => {
-              if (track.kind === "video") {
-                track.stop();
-              }
-            });
-            myStream.addTrack(videoTrack);
-          }
-        } else {
-          for (const track of screenStream.getTracks()) {
-            peer.peer.addTrack(track, screenStream);
-          }
+          videoSender.replaceTrack(screenStream.getVideoTracks()[0]);
         }
+
+        console.log("screenStreamId: ", screenStream.id);
+
+        const offer = await peer.getOffer();
+        socket.emit("peer-nego-needed", {
+          offer,
+          to: remoteSocketId,
+          streamId: screenStream.id,
+        });
+
+        // Replace remoteStream with screenShareStream
+        setRemoteStream(screenStream);
       } catch (error) {
         console.error("There is an error: ", error);
       }
     }
-  }, [isScreenSharing, screenShareStream, myStream]);
+  }, [isScreenSharing, screenShareStream, remoteSocketId, myStream]);
 
   useEffect(() => {
     return () => {
@@ -360,48 +373,67 @@ const Room = () => {
         </div>
       </div>
       <div className={styles.roomBox}>
-        <div className={styles.streamingArea}>
-          {myStream && (
-            <div className={styles.myStream}>
-              <ReactPlayer
-                playing
-                muted
-                height="250px"
-                width="350px"
-                url={myStream}
-              />
-            </div>
-          )}
-          {remoteStream && (
-            <div className={styles.remoteStream}>
-              <ReactPlayer
-                playing
-                // height="300px"
-                // width="400px"
-                url={remoteStream}
-              />
-            </div>
-          )}
-          {myStream && (
-            <div className={styles.streamButtons}>
-              <button onClick={toggleVideo}>
-                {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
-              </button>
-              <button onClick={toggleAudio}>
-                {isAudioOn ? <HiSpeakerWave /> : <HiSpeakerXMark />}
-              </button>
-              <button onClick={hangUp}>
-                <MdCallEnd />
-              </button>
-              <button onClick={toggleScreenStream}>
-                {isScreenSharing ? (
-                  <MdOutlineStopScreenShare />
-                ) : (
-                  <MdOutlineScreenShare />
-                )}
-              </button>
-            </div>
-          )}
+        <div
+          className={`${styles.streamingArea} ${
+            isScreenSharing ? styles.newStreamingArea : ""
+          }`}
+        >
+          <div className={styles.peersStream}>
+            {myStream && (
+              <div
+                className={`${styles.myStream} ${
+                  remoteStream ? styles.newMyStream : ""
+                }`}
+              >
+                <ReactPlayer
+                  playing
+                  muted
+                  height="250px"
+                  width="350px"
+                  url={myStream}
+                />
+              </div>
+            )}
+            {remoteStream && (
+              <div className={styles.remoteStream}>
+                <ReactPlayer
+                  playing
+                  // height="300px"
+                  // width="400px"
+                  url={remoteStream}
+                />
+              </div>
+            )}
+          </div>
+          <div className={styles.shareScreenStream}>
+            {isScreenSharing && (
+              <div className={styles.remoteShareStream}>
+                <ReactPlayer playing url={screenShareStream} />
+              </div>
+            )}
+          </div>
+          <div className={styles.streamButtonsBox}>
+            {myStream && (
+              <div className={styles.streamButtons}>
+                <button onClick={toggleVideo}>
+                  {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
+                </button>
+                <button onClick={toggleAudio}>
+                  {isAudioOn ? <HiSpeakerWave /> : <HiSpeakerXMark />}
+                </button>
+                <button onClick={hangUp}>
+                  <MdCallEnd />
+                </button>
+                <button onClick={toggleScreenStream}>
+                  {isScreenSharing ? (
+                    <MdOutlineStopScreenShare />
+                  ) : (
+                    <MdOutlineScreenShare />
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

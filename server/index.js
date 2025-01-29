@@ -45,13 +45,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("peer-nego-needed", (data) => {
-    const { offer, to } = data;
-    io.to(to).emit("peer-nego-needed", { offer, from: socket.id });
+    const { offer, to, streamId } = data;
+    io.to(to).emit("peer-nego-needed", { offer, from: socket.id, streamId });
   });
 
   socket.on("peer-nego-done", (data) => {
-    const { to, ans } = data;
-    io.to(to).emit("peer-nego-final", { ans, from: socket.id });
+    const { to, ans, streamId } = data;
+    io.to(to).emit("peer-nego-final", { ans, from: socket.id, streamId });
   });
 
   socket.on("user-hangup", (data) => {

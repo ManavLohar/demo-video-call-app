@@ -100,79 +100,178 @@
   }
 
   .roomBox {
-    display: flex;
-    width: 100%;
-    height: 100%;
+    display: grid;
+    width: 100vw;
+    height: 100vh;
     position: relative;
 
     .streamingArea {
-      display: flex;
+      display: grid;
+      // grid-template-columns: 0.2fr 0.8fr;
       // flex: 0.85;
-      height: 100%;
-      width: 100%;
+      gap: 1rem;
+      padding: 1rem;
+      // height: 100%;
+      // width: 100%;
       background-color: rgb(0, 0, 39);
       position: relative;
 
-      .myStream {
-        display: flex;
-        flex-direction: column;
-        position: absolute;
-        bottom: 1rem;
-        right: 1rem;
-        z-index: 5;
-        animation: fadeIn 1.5s ease-in-out;
-
-        > div {
-          > video {
-            width: fit-content !important;
-            border-radius: 20px;
-            box-shadow: 1px 1px 10px black;
-          }
-        }
-      }
-
-      .remoteStream {
-        display: flex;
+      .peersStream {
+        height: 75vh;
         width: 100%;
-        height: 100%;
-        justify-content: center;
-        animation: fadeIn 1.5s ease-in-out;
+        display: grid;
+        align-items: center;
+        grid-template-columns: 1fr;
+        justify-items: center;
 
-        > div {
+        .myStream {
+          display: grid;
+          // position: absolute;
+          z-index: 5;
+          animation: fadeIn 1.5s ease-in-out;
+          // height: 100%;
+          // width: 100%;
+
+          > div {
+            display: grid;
+            height: 100% !important;
+            width: 100% !important;
+            align-items: center;
+            justify-items: center;
+            > video {
+              width: 75vw !important;
+              height: 85vh !important;
+              border-radius: 20px;
+              // box-shadow: 1px 1px 10px black;
+            }
+          }
+        }
+
+        .newMyStream {
+          position: absolute;
+          bottom: 1rem;
+          left: 1rem;
+
+          > div {
+            > video {
+              width: 300px !important;
+              height: 250px !important;
+            }
+          }
+        }
+
+        .remoteStream {
           display: flex;
-          height: unset !important;
-          width: unset !important;
+          // width: 100%;
+          // height: 100%;
+          justify-content: center;
+          animation: fadeIn 1.5s ease-in-out;
 
-          > video {
-            flex: 1;
+          > div {
+            display: flex;
+            height: 100% !important;
+            width: 100% !important;
+
+            > video {
+              flex: 1;
+              height: 85vh !important;
+              width: 100% !important;
+            }
           }
         }
       }
 
-      .streamButtons {
+      .shareScreenStream {
+        display: grid;
+        width: 100%;
+        .remoteStream {
+          width: 100%;
+        }
+      }
+
+      .streamButtonsBox {
         position: absolute;
         display: flex;
         bottom: 2rem;
         width: 100%;
         justify-content: center;
-        gap: 15px;
+        z-index: 5;
         animation: fadeIn 2s ease-in-out;
+        // width: fit-content;
 
-        > button {
-          border-radius: 50%;
+        .streamButtons {
+          width: fit-content;
           padding: 10px;
-          border: none;
-          outline: none;
-          font-size: 2rem;
+          background-color: rgba(58, 58, 58, 0.349);
           display: flex;
-          align-items: center;
-          justify-content: center;
-          color: rgb(83, 83, 83);
-        }
+          border-radius: 50px;
+          backdrop-filter: blur(5px);
+          gap: 15px;
 
-        > button:nth-of-type(3) {
-          background-color: rgb(179, 17, 17);
-          color: white;
+          > button {
+            border-radius: 50%;
+            padding: 10px;
+            border: none;
+            outline: none;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgb(218, 218, 218);
+            background-color: transparent;
+            transition: all 0.3s ease;
+            &:hover {
+              background-color: rgb(80, 80, 80);
+            }
+          }
+
+          > button:nth-of-type(3) {
+            background-color: rgb(179, 17, 17);
+            color: white;
+          }
+        }
+      }
+    }
+
+    // .shareScreenStream {
+    //   .remoteShareStream {
+    //     > div {
+    //       height: 85vh !important;
+    //       height: 100% !important;
+    //     }
+    //   }
+    // }
+    .newStreamingArea {
+      grid-template-columns: 0.2fr 0.8fr;
+      .peersStream {
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+        // height: 100%;
+        .newMyStream {
+          position: relative;
+          bottom: unset;
+          left: unset;
+        }
+        .remoteStream {
+          > div {
+            > video {
+              height: 250px !important;
+              width: 300px !important;
+            }
+          }
+        }
+      }
+      .shareScreenStream {
+        .remoteShareStream {
+          > div {
+            height: 100% !important;
+            width: 100% !important;
+            > video {
+              height: 85vh !important;
+              width: 100% !important;
+            }
+          }
         }
       }
     }
