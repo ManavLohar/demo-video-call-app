@@ -228,21 +228,22 @@ const Room = () => {
   const toggleVideo = useCallback(() => {
     if (myStream) {
       const videoTrack = myStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOn((prevState) => !prevState);
+      if (!videoTrack) return;
 
-        // Update peer connection's senders
-        const senders = peer.peer.getSenders();
-        const videoSender = senders.find(
-          (sender) => sender.track.kind === "video"
-        );
-        if (videoSender) {
-          videoSender.replaceTrack(videoTrack);
-        }
+      const newState = !videoTrack.enabled;
+      videoTrack.enabled = newState;
+      setIsVideoOn(newState);
+
+      const senders = peer.peer.getSenders();
+      const videoSender = senders.find((s) => s.track?.kind === "video");
+
+      console.log("sender", videoSender);
+
+      if (videoSender) {
+        videoSender.replaceTrack(newState ? videoTrack : getBlankVideoTrack());
       }
     }
-  }, [isVideoOn, myStream]);
+  }, [myStream]);
 
   const toggleAudio = useCallback(() => {
     if (myStream) {
@@ -262,6 +263,17 @@ const Room = () => {
       }
     }
   }, [isAudioOn, myStream]);
+
+  // Create blank video track
+  const getBlankVideoTrack = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.captureStream().getVideoTracks()[0];
+  };
 
   // For hang up call
   const hangUp = useCallback(() => {
@@ -379,19 +391,28 @@ const Room = () => {
           }`}
         >
           <div className={styles.peersStream}>
+
             {myStream && (
               <div
                 className={`${styles.myStream} ${
                   remoteStream ? styles.newMyStream : ""
                 }`}
-              >
-                <ReactPlayer
-                  playing
-                  muted
-                  height="250px"
-                  width="350px"
-                  url={myStream}
-                />
+             style={{ backgroundColor: !isVideoOn ? "black" : "transparent"  ,height: isVideoOn ? "auto" : "200px",
+              width: isVideoOn ? "auto" : "300px" }} >
+             {myStream && isVideoOn ? (
+              <ReactPlayer
+                playing
+                muted
+                height="250px"
+                width="350px"
+                url={myStream}
+              />
+            ) : (
+              <p style={{ color: "white", textAlign: "center", paddingTop: "100px" }}>
+                Video is Off
+              </p>
+            )}
+                
               </div>
             )}
             {remoteStream && (
