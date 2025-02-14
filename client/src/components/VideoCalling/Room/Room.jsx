@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import styles from "./Room.module.scss";
 import ReactPlayer from "react-player";
 import { useSocket } from "../../../Context/Socket";
 //import { usePeer } from "../Context/Peer";
 import peer from "../../../Context/Peer";
+import { useLocation } from "react-router-dom";
 import {
   MdCall,
   MdCallEnd,
@@ -12,23 +13,41 @@ import {
 } from "react-icons/md";
 import { FaVideo, FaVideoSlash } from "react-icons/fa";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
+import { IoSend } from "react-icons/io5";
 
 const Room = () => {
-  const socket = useSocket();
+  const socket = useSocket(); // Custom hook
 
+  // For video Calling
   const [remoteSocketId, setRemoteSocketId] = useState("");
+
+  // For containing streams
   const [myStream, setMyStream] = useState("");
   const [remoteStream, setRemoteStream] = useState();
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isAudioOn, setIsAudioOn] = useState(true);
   const [screenShareStream, setScreenShareStream] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  // For video/audio on/off functionality
+  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isAudioOn, setIsAudioOn] = useState(true);
   const [originalVideoTrack, setOriginalVideoTrack] = useState(null);
+
+  // For containing caller details
   const [incomingCall, setIncomingCall] = useState(null);
+  const [currentTrackId, setCurrentTrackId] = useState(false);
+
+  // For chat functionality
+  const [allMessages, setAllMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const location = useLocation();
+  const [username, setUsername] = useState(location.state?.name);
+  const messageListRef = useRef(null);
 
   const handleNewUserJoined = useCallback(
     async (data) => {
       const { email, id } = data;
+      // setName(email);
+      console.log(email);
       setRemoteSocketId(id);
     },
     [socket]
@@ -123,7 +142,11 @@ const Room = () => {
       //   peer.peer.addTrack(track, screenShareStream);
       // }
     }
-    socket.emit("peer-nego-needed", { offer, to: remoteSocketId });
+    socket.emit("peer-nego-needed", {
+      offer,
+      to: remoteSocketId,
+      shareStream: false,
+    });
   }, [remoteSocketId, socket, screenShareStream]);
 
   useEffect(() => {
@@ -134,7 +157,7 @@ const Room = () => {
   }, [handleNegoNeeded]);
 
   const handleNegoNeedIncomming = useCallback(
-    async ({ from, offer, streamId }) => {
+    async ({ from, offer, shareStream }) => {
       setRemoteSocketId(from);
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -142,47 +165,67 @@ const Room = () => {
       });
 
       setMyStream(stream);
+      // console.log("Remote peer", localpeer);
       const ans = await peer.getAnswer(offer);
-      socket.emit("peer-nego-done", { to: from, ans, streamId });
+      socket.emit("peer-nego-done", { to: from, ans, shareStream });
 
-      peer.peer.addEventListener("track", async (ev) => {
-        const streams = ev.streams;
-        if (remoteStream) {
-          // If there are multiple streams, assume the first one is the video stream
-          // and the second one is the screen sharing stream
-          // setRemoteStream(remoteStream[0]);
+      if (!shareStream) {
+        peer.peer.addEventListener("track", (ev) => {
+          const streams = ev.streams;
           setScreenShareStream(streams[0]);
-        } else {
-          // If there is only one stream, assume it's the video stream
+          setIsScreenSharing(true);
+          // console.log("It replaced from true side!");
+        });
+      } else {
+        peer.peer.addEventListener("track", (ev) => {
+          const streams = ev.streams;
           setRemoteStream(streams[0]);
-        }
-        console.log("Remote Stream: ", streams.getTracks());
-      });
+          setIsScreenSharing(false);
+          // console.log("It replaced from false side!");
+          setScreenShareStream("");
+        });
+      }
     },
     [socket]
   );
 
-  const handleNegoNeedFinal = useCallback(async ({ ans, streamId }) => {
+  const handleNegoNeedFinal = useCallback(async ({ ans, shareStream }) => {
     await peer.setLocalDescription(ans);
 
-    peer.peer.addEventListener("track", async (ev) => {
-      const streams = ev.streams;
-      if (remoteStream) {
-        setScreenShareStream(streams[0]);
-      } else {
-        setRemoteStream(streams[0]);
-      }
-      console.log("remoteStream: ", remoteStream);
-    });
+    // peer.peer.addEventListener("track", async (ev) => {
+    //   const streams = ev.streams;
+    //   if (currentTrackId) {
+    //     setScreenShareStream(streams[0]);
+    //   } else {
+    //     setRemoteStream(streams[0]);
+    //   }
+    //   console.log("remoteStream: ", remoteStream);
+    // });
   }, []);
 
   useEffect(() => {
-    peer.peer.addEventListener("track", async (ev) => {
-      const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!");
-      setRemoteStream(remoteStream[0]);
-    });
+    if (currentTrackId) {
+      peer.peer.addEventListener("track", async (ev) => {
+        const remoteStream = ev.streams;
+        setScreenShareStream(remoteStream[0]);
+        console.log("first It's called");
+      });
+    } else {
+      console.log("UseEffect side Remote Stream: ", remoteStream);
+      console.log("currentTrackId", currentTrackId);
+      // setRemoteStreamSet(true);
+      peer.peer.addEventListener("track", async (ev) => {
+        const remoteStream = ev.streams;
+        console.log("GOT TRACKS!!");
+        console.log("It replaced from useEffect");
+        setRemoteStream(remoteStream[0]);
+        // console.log("All Streams", remoteStream);
+        // setCurrentTrackId(remoteStream[0].id);
+      });
+      setCurrentTrackId(true);
+    }
   }, []);
+  console.log("currentTrackId", currentTrackId);
 
   const handleHangUp = useCallback(
     async ({ from }) => {
@@ -199,6 +242,10 @@ const Room = () => {
     [remoteStream]
   );
 
+  const handleReceiveMessage = useCallback((newMessage) => {
+    setAllMessages((prevMessages) => [...prevMessages, newMessage]);
+  }, []);
+
   useEffect(() => {
     socket.on("user-joined", handleNewUserJoined);
     socket.on("incoming-call", handleIncommingCall);
@@ -206,6 +253,7 @@ const Room = () => {
     socket.on("peer-nego-needed", handleNegoNeedIncomming);
     socket.on("peer-nego-final", handleNegoNeedFinal);
     socket.on("user-hangup", handleHangUp);
+    socket.on("receive-message", handleReceiveMessage);
 
     return () => {
       socket.off("user-joined", handleNewUserJoined);
@@ -214,6 +262,7 @@ const Room = () => {
       socket.off("peer-nego-needed", handleNegoNeedIncomming);
       socket.off("peer-nego-final", handleNegoNeedFinal);
       socket.off("user-hangup", handleHangUp);
+      socket.off("receive-message", handleReceiveMessage);
     };
   }, [
     handleNewUserJoined,
@@ -306,7 +355,11 @@ const Room = () => {
       }
 
       const offer = await peer.getOffer();
-      socket.emit("peer-nego-needed", { offer, to: remoteSocketId });
+      socket.emit("peer-nego-needed", {
+        offer,
+        to: remoteSocketId,
+        shareStream: false,
+      });
 
       // Replace remoteStream with previous remoteStream
       const previousRemoteStream = remoteStream;
@@ -338,7 +391,7 @@ const Room = () => {
         socket.emit("peer-nego-needed", {
           offer,
           to: remoteSocketId,
-          streamId: screenStream.id,
+          shareStream: true,
         });
 
         // Replace remoteStream with screenShareStream
@@ -357,6 +410,31 @@ const Room = () => {
       }
     };
   }, [originalVideoTrack]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (message.trim() === "") return;
+
+    const newMessage = {
+      text: message,
+      // from: socket.id,
+      from: username,
+      to: remoteSocketId,
+    };
+
+    socket.emit("send-message", newMessage);
+    setAllMessages((prevMessages) => [...prevMessages, newMessage]);
+    setMessage("");
+  }, [message, socket, remoteSocketId]);
+
+  useEffect(() => {
+    setUsername(location.state?.name);
+  }, [location]);
+
+  useEffect(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [allMessages]);
 
   return (
     <div className={styles.room}>
@@ -391,28 +469,36 @@ const Room = () => {
           }`}
         >
           <div className={styles.peersStream}>
-
             {myStream && (
               <div
                 className={`${styles.myStream} ${
                   remoteStream ? styles.newMyStream : ""
                 }`}
-             style={{ backgroundColor: !isVideoOn ? "black" : "transparent"  ,height: isVideoOn ? "auto" : "200px",
-              width: isVideoOn ? "auto" : "300px" }} >
-             {myStream && isVideoOn ? (
-              <ReactPlayer
-                playing
-                muted
-                height="250px"
-                width="350px"
-                url={myStream}
-              />
-            ) : (
-              <p style={{ color: "white", textAlign: "center", paddingTop: "100px" }}>
-                Video is Off
-              </p>
-            )}
-                
+                style={{
+                  backgroundColor: !isVideoOn ? "black" : "transparent",
+                  height: isVideoOn ? "auto" : "200px",
+                  width: isVideoOn ? "auto" : "300px",
+                }}
+              >
+                {myStream && isVideoOn ? (
+                  <ReactPlayer
+                    playing
+                    muted
+                    height="250px"
+                    width="350px"
+                    url={myStream}
+                  />
+                ) : (
+                  <p
+                    style={{
+                      color: "white",
+                      textAlign: "center",
+                      paddingTop: "100px",
+                    }}
+                  >
+                    Video is Off
+                  </p>
+                )}
               </div>
             )}
             {remoteStream && (
@@ -454,6 +540,34 @@ const Room = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+        <div className={styles.chatArea}>
+          <div className={styles.messageList} ref={messageListRef}>
+            {allMessages.map((message, index) => {
+              return (
+                <div key={index} className={styles.message}>
+                  <p>
+                    <span>
+                      {message.from === username ? "You" : message.from}{" "}
+                    </span>
+                    <span>{message.text}</span>
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <div className={styles.chatBox}>
+            {/* <form action=""> */}
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+            <div className={styles.submitIcon} onClick={handleSendMessage}>
+              <IoSend />
+            </div>
+            {/* </form> */}
           </div>
         </div>
       </div>

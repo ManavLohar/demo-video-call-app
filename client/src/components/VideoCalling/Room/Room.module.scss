@@ -12,6 +12,7 @@
     background-color: rgb(0, 12, 63);
     padding: 2rem 1rem;
     align-items: center;
+    height: 10vh;
 
     > h1 {
       color: white;
@@ -102,8 +103,9 @@
   .roomBox {
     display: grid;
     width: 100vw;
-    height: 100vh;
+    height: 90vh;
     position: relative;
+    grid-template-columns: 0.7fr 0.3fr;
 
     .streamingArea {
       display: grid;
@@ -241,8 +243,9 @@
     //     }
     //   }
     // }
+
     .newStreamingArea {
-      grid-template-columns: 0.2fr 0.8fr;
+      grid-template-columns: 0.2fr 1fr;
       .peersStream {
         display: flex;
         flex-direction: column;
@@ -273,6 +276,70 @@
             }
           }
         }
+      }
+    }
+    .chatArea {
+      display: grid;
+      height: 100%;
+      width: 100%;
+      position: relative;
+      padding: 10px;
+      overflow-y: auto;
+      gap: 1rem;
+      scrollbar-width: none;
+      .messageList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        height: 100%;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        // width: 300px;
+        .message {
+          display: flex;
+          flex-direction: column;
+          background-color: whitesmoke;
+          padding: 5px;
+          > p {
+            display: flex;
+            flex-direction: column;
+            word-break: break-all;
+            gap: 5px;
+            > span:nth-of-type(1) {
+              color: grey;
+              font-size: 0.8rem;
+            }
+          }
+        }
+      }
+      .chatBox {
+        display: flex;
+        align-self: flex-end;
+        // margin: 0 10px;
+        border: 1px solid #000c3f;
+        // border-radius: 50px;
+        overflow: hidden;
+        // > form {
+        //   width: 100%;
+        //   display: flex;
+        > input {
+          padding: 0 10px;
+          flex: 1;
+          border: none;
+          outline: none;
+          font-size: 1rem;
+        }
+        .submitIcon {
+          // border-radius: 50%;
+          background-color: #000c3f;
+          color: white;
+          padding: 10px 18px;
+          cursor: pointer;
+          > svg {
+            font-size: 2rem;
+          }
+        }
+        // }
       }
     }
   }

@@ -26,11 +26,11 @@ const socketIdToEmailMap = new Map();
 io.on("connection", (socket) => {
   console.log("Socket Connected", socket.id);
   socket.on("join-room", (data) => {
-    const { email, room } = data;
-    emailToSocketIdMap.set(email, socket.id);
-    socketIdToEmailMap.set(socket.id, email);
-    io.to(room).emit("user-joined", { email, id: socket.id });
-    socket.join(room);
+    const { name, roomId } = data;
+    emailToSocketIdMap.set(name, socket.id);
+    socketIdToEmailMap.set(socket.id, name);
+    io.to(roomId).emit("user-joined", { name, id: socket.id });
+    socket.join(roomId);
     io.to(socket.id).emit("join-room", data);
   });
 
@@ -45,17 +45,29 @@ io.on("connection", (socket) => {
   });
 
   socket.on("peer-nego-needed", (data) => {
-    const { offer, to, streamId } = data;
-    io.to(to).emit("peer-nego-needed", { offer, from: socket.id, streamId });
+    const { offer, to, shareStream } = data;
+    io.to(to).emit("peer-nego-needed", {
+      offer,
+      from: socket.id,
+      shareStream,
+    });
   });
 
   socket.on("peer-nego-done", (data) => {
-    const { to, ans, streamId } = data;
-    io.to(to).emit("peer-nego-final", { ans, from: socket.id, streamId });
+    const { to, ans, shareStream } = data;
+    io.to(to).emit("peer-nego-final", { ans, from: socket.id, shareStream });
   });
 
   socket.on("user-hangup", (data) => {
     const { to } = data;
     io.to(to).emit("user-hangup", { from: socket.id });
+  });
+
+  socket.on("send-message", (data) => {
+    const { to, text, from } = data;
+    io.to(to).emit("receive-message", {
+      from,
+      text,
+    });
   });
 });
