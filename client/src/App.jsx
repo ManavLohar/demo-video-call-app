@@ -7,14 +7,14 @@ import Room from "./components/VideoCalling/Room/Room";
 
 function App() {
   return (
-    <>
+    <div className="app">
       <SocketProvider>
         <Routes>
           <Route path="/" element={<Lobby />} />
           <Route path="/room/:room" element={<Room />} />
         </Routes>
       </SocketProvider>
-    </>
+    </div>
   );
 }
 

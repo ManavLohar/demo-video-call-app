@@ -35,8 +35,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("user-call", (data) => {
-    const { to, offer } = data;
-    io.to(to).emit("incoming-call", { from: socket.id, offer });
+    const { to, name, offer } = data;
+    io.to(to).emit("incoming-call", { from: socket.id, name, offer });
   });
 
   socket.on("call-accepted", (data) => {

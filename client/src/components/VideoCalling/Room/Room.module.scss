@@ -1,3 +1,5 @@
+// @use "../../../global-style/global.scss" as *;
+
 .room {
   display: flex;
   flex-direction: column;
@@ -105,7 +107,7 @@
     width: 100vw;
     height: 90vh;
     position: relative;
-    grid-template-columns: 0.7fr 0.3fr;
+    // grid-template-columns: 0.7fr 0.3fr;
 
     .streamingArea {
       display: grid;
@@ -197,7 +199,7 @@
         bottom: 2rem;
         width: 100%;
         justify-content: center;
-        z-index: 5;
+        // z-index: 5;
         animation: fadeIn 2s ease-in-out;
         // width: fit-content;
 
@@ -209,6 +211,8 @@
           border-radius: 50px;
           backdrop-filter: blur(5px);
           gap: 15px;
+          position: relative;
+          z-index: 5;
 
           > button {
             border-radius: 50%;
@@ -222,6 +226,7 @@
             color: rgb(218, 218, 218);
             background-color: transparent;
             transition: all 0.3s ease;
+            cursor: pointer;
             &:hover {
               background-color: rgb(80, 80, 80);
             }
@@ -281,12 +286,19 @@
     .chatArea {
       display: grid;
       height: 100%;
-      width: 100%;
+      width: 400px;
       position: relative;
       padding: 10px;
       overflow-y: auto;
       gap: 1rem;
       scrollbar-width: none;
+      position: absolute;
+      background-color: white;
+      right: -400px;
+      top: 0;
+      opacity: 0;
+      transition: all 0.3s ease;
+      // border-radius: 20px 0 0 20px;
       .messageList {
         display: flex;
         flex-direction: column;
@@ -311,6 +323,10 @@
             }
           }
         }
+        > h3 {
+          font-size: 1.2rem;
+          font-weight: lighter;
+        }
       }
       .chatBox {
         display: flex;
@@ -319,27 +335,27 @@
         border: 1px solid #000c3f;
         // border-radius: 50px;
         overflow: hidden;
-        // > form {
-        //   width: 100%;
-        //   display: flex;
-        > input {
-          padding: 0 10px;
-          flex: 1;
-          border: none;
-          outline: none;
-          font-size: 1rem;
-        }
-        .submitIcon {
-          // border-radius: 50%;
-          background-color: #000c3f;
-          color: white;
-          padding: 10px 18px;
-          cursor: pointer;
-          > svg {
-            font-size: 2rem;
+        > form {
+          width: 100%;
+          display: flex;
+          > input {
+            padding: 0 10px;
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+          }
+          .submitIcon {
+            // border-radius: 50%;
+            background-color: #000c3f;
+            color: white;
+            padding: 10px 15px;
+            cursor: pointer;
+            > svg {
+              font-size: 1.5rem;
+            }
           }
         }
-        // }
       }
     }
   }
@@ -354,24 +370,71 @@
   }
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
   .room {
     .roomBox {
       .streamingArea {
-        .myStream {
-          height: 150px;
-          width: max-content;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
+        align-content: flex-start;
+        .peersStream {
+          // height: 45vh;
+          gap: 10px;
+          .newMyStream {
+            position: unset;
+            grid-area: 2;
+            > div {
+              > video {
+                width: 200px !important;
+                height: 150px !important;
+                border-radius: 0;
+              }
+            }
+          }
+          .remoteStream {
+            > div {
+              > video {
+                height: 50vh !important;
+                // width: 200px !important;
+                // height: 150px !important;
+              }
+            }
+          }
+        }
+      }
+      .newStreamingArea {
+        grid-template-columns: 1fr;
+
+        .peersStream {
+          grid-area: 2;
+          flex-direction: row;
           justify-content: center;
-          border-radius: 20px;
-          box-shadow: 1px 1px 10px black;
-          bottom: 8rem;
-          right: 0.5rem;
-          > div {
-            height: 200px !important;
-            width: max-content !important;
+          height: fit-content;
+          // height: 45vh;
+          .newMyStream {
+            > div {
+              > video {
+                max-width: 200px !important;
+                max-height: 150px !important;
+              }
+            }
+          }
+          .remoteStream {
+            > div {
+              > video {
+                width: 200px !important;
+                height: 150px !important;
+              }
+            }
+          }
+        }
+
+        .shareScreenStream {
+          height: 45vh;
+          .remoteShareStream {
+            > div {
+              > video {
+                height: 45vh !important;
+              }
+            }
           }
         }
       }
@@ -382,47 +445,61 @@
 @media (max-width: 500px) {
   .room {
     .roomBox {
-      .streamingArea {
-        .myStream {
-          // height: 100px;
-          // width: 150px;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 20px;
-          // box-shadow: 1px 1px 10px black;
-          box-shadow: unset;
-          bottom: 8rem;
-          > div {
-            height: 100% !important;
-            width: 100% !important;
+      .newStreamingArea {
+        .peersStream {
+          .newMyStream {
+            > div {
+              > video {
+                width: 150px !important;
+                height: 100px !important;
+              }
+            }
           }
-        }
-        .streamButtons {
-          > button {
-            font-size: 1.2rem;
+          .remoteStream {
+            > div {
+              > video {
+                width: 150px !important;
+                height: 100px !important;
+              }
+            }
           }
         }
       }
     }
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
+  }
+}
 
-      > h1 {
-        font-size: 1.5rem;
-      }
-
-      .sidebar {
-        > h4 {
-          font-size: 1rem;
+@media (max-width: 400px) {
+  .room {
+    .roomBox {
+      .streamingArea {
+        .peersStream {
+          .newMyStream {
+            > div {
+              > video {
+                width: 150px !important;
+                height: 100px !important;
+              }
+            }
+          }
+          .remoteStream {
+            > div {
+              > video {
+                height: 40vh !important;
+              }
+            }
+          }
         }
-
-        .sidebarButtons {
-          > button {
-            font-size: 12px;
+      }
+      .newStreamingArea {
+        .peersStream {
+          .remoteStream {
+            > div {
+              > video {
+                width: 150px !important;
+                height: 100px !important;
+              }
+            }
           }
         }
       }

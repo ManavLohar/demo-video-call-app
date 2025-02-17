@@ -14,6 +14,7 @@ import {
 import { FaVideo, FaVideoSlash } from "react-icons/fa";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import { IoSend } from "react-icons/io5";
+import { TbMessageOff, TbMessagePlus } from "react-icons/tb";
 
 const Room = () => {
   const socket = useSocket(); // Custom hook
@@ -36,11 +37,16 @@ const Room = () => {
   const [incomingCall, setIncomingCall] = useState(null);
   const [currentTrackId, setCurrentTrackId] = useState(false);
 
+  // For hide and show call and share stream button
+  const [isCallAccepted, setIsCallAccepted] = useState(false);
+  const [isStreamSent, setIsStreamSent] = useState(false);
+
   // For chat functionality
   const [allMessages, setAllMessages] = useState([]);
   const [message, setMessage] = useState("");
   const location = useLocation();
   const [username, setUsername] = useState(location.state?.name);
+  const [messageBoxVisibility, setMessageBoxVisibility] = useState(false);
   const messageListRef = useRef(null);
 
   const handleNewUserJoined = useCallback(
@@ -59,18 +65,18 @@ const Room = () => {
       video: true,
     });
     const offer = await peer.getOffer();
-    socket.emit("user-call", { to: remoteSocketId, offer });
+    socket.emit("user-call", { to: remoteSocketId, name: username, offer });
     setMyStream(stream);
   }, [remoteSocketId, socket]);
 
   const handleIncommingCall = useCallback(
-    async ({ from, offer }) => {
+    async ({ from, name, offer }) => {
       setRemoteSocketId(from);
       // const stream = await navigator.mediaDevices.getUserMedia({
       //   audio: true,
       //   video: true,
       // });
-      setIncomingCall({ from, offer });
+      setIncomingCall({ from, name, offer });
       // setMyStream(stream);
       console.log(`Incoming Call`, from, offer);
       // const ans = await peer.getAnswer(offer);
@@ -91,6 +97,7 @@ const Room = () => {
       });
       setMyStream(stream);
       console.log(`Incoming Call Accepted:`, incomingCall.from);
+      setIsCallAccepted(true);
 
       const ans = await peer.getAnswer(incomingCall.offer);
       socket.emit("call-accepted", { to: incomingCall.from, ans });
@@ -110,13 +117,15 @@ const Room = () => {
     for (const track of myStream.getTracks()) {
       peer.peer.addTrack(track, myStream);
     }
+    setIsStreamSent(true);
   }, [myStream]);
 
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
       peer.setLocalDescription(ans);
       console.log("Call Accepted!");
-      sendStreams();
+      setIsCallAccepted(true);
+      // sendStreams();
     },
     [sendStreams]
   );
@@ -337,6 +346,8 @@ const Room = () => {
     setScreenShareStream(null);
     setIsScreenSharing(false);
     setRemoteSocketId(null);
+    setIsCallAccepted(false);
+    setIsStreamSent(false);
     socket.emit("user-hangup", { to: remoteSocketId });
   }, [myStream, remoteSocketId, socket, screenShareStream]);
 
@@ -411,20 +422,24 @@ const Room = () => {
     };
   }, [originalVideoTrack]);
 
-  const handleSendMessage = useCallback(async () => {
-    if (message.trim() === "") return;
+  const handleSendMessage = useCallback(
+    async (e) => {
+      e.preventDefault();
+      if (message.trim() === "") return;
 
-    const newMessage = {
-      text: message,
-      // from: socket.id,
-      from: username,
-      to: remoteSocketId,
-    };
+      const newMessage = {
+        text: message,
+        // from: socket.id,
+        from: username,
+        to: remoteSocketId,
+      };
 
-    socket.emit("send-message", newMessage);
-    setAllMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessage("");
-  }, [message, socket, remoteSocketId]);
+      socket.emit("send-message", newMessage);
+      setAllMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessage("");
+    },
+    [message, socket, remoteSocketId]
+  );
 
   useEffect(() => {
     setUsername(location.state?.name);
@@ -442,19 +457,19 @@ const Room = () => {
         <div className={styles.sidebar}>
           <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
           <div className={styles.sidebarButtons}>
-            {myStream && (
+            {!isStreamSent && myStream && (
               <button onClick={sendStreams} className={styles.sendStreamsBtn}>
                 Send Stream <FaVideo />
               </button>
             )}
-            {remoteSocketId && (
+            {remoteSocketId && !isCallAccepted && (
               <button onClick={handleCallUser} className={styles.callBtn}>
                 CALL <MdCall />
               </button>
             )}
             {incomingCall && (
               <div className={styles.AcceptBtn}>
-                <p>{incomingCall.from} is calling...</p>
+                <p>{incomingCall.name} is calling...</p>
                 <button onClick={acceptCall}>Accept</button>
                 <button onClick={rejectCall}>Reject</button>
               </div>
@@ -538,36 +553,52 @@ const Room = () => {
                     <MdOutlineScreenShare />
                   )}
                 </button>
+                <button
+                  onClick={() => setMessageBoxVisibility(!messageBoxVisibility)}
+                >
+                  {messageBoxVisibility ? <TbMessageOff /> : <TbMessagePlus />}
+                </button>
               </div>
             )}
           </div>
         </div>
-        <div className={styles.chatArea}>
+        <div
+          className={styles.chatArea}
+          style={{
+            right: messageBoxVisibility ? "0" : "-400px",
+            opacity: messageBoxVisibility ? "1" : "0",
+          }}
+        >
           <div className={styles.messageList} ref={messageListRef}>
-            {allMessages.map((message, index) => {
-              return (
-                <div key={index} className={styles.message}>
-                  <p>
-                    <span>
-                      {message.from === username ? "You" : message.from}{" "}
-                    </span>
-                    <span>{message.text}</span>
-                  </p>
-                </div>
-              );
-            })}
+            {allMessages.length > 0 ? (
+              allMessages.map((message, index) => {
+                return (
+                  <div key={index} className={styles.message}>
+                    <p>
+                      <span>
+                        {message.from === username ? "You" : message.from}{" "}
+                      </span>
+                      <span>{message.text}</span>
+                    </p>
+                  </div>
+                );
+              })
+            ) : (
+              <h3>Say something to start the conversation!</h3>
+            )}
           </div>
           <div className={styles.chatBox}>
-            {/* <form action=""> */}
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <div className={styles.submitIcon} onClick={handleSendMessage}>
-              <IoSend />
-            </div>
-            {/* </form> */}
+            <form onSubmit={handleSendMessage}>
+              <input
+                type="text"
+                value={message}
+                placeholder="type your message here..."
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <div className={styles.submitIcon} onClick={handleSendMessage}>
+                <IoSend />
+              </div>
+            </form>
           </div>
         </div>
       </div>
