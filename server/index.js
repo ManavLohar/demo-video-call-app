@@ -6,17 +6,17 @@ const { log } = require("console");
 const app = express();
 const port = 8000;
 
-// app.use(express.static(path.join(__dirname, "public", "dist")));
+app.use(express.static(path.join(__dirname, "public", "dist")));
 
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "public", "dist", "index.html"));
-// });
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "dist", "index.html"));
+});
 
-// const server = app.listen(port, () => {
-//   log(`Server is running on port ${port}`);
-// });
+const server = app.listen(port, () => {
+  log(`Server is running on port ${port}`);
+});
 
-const io = new Server(port, {
+const io = new Server(server, {
   cors: true,
 });
 

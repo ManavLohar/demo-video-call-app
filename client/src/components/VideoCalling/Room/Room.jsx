@@ -13,7 +13,7 @@ import {
 } from "react-icons/md";
 import { FaVideo, FaVideoSlash } from "react-icons/fa";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
-import { IoSend } from "react-icons/io5";
+import { IoCloseOutline, IoSend } from "react-icons/io5";
 import { TbMessageOff, TbMessagePlus } from "react-icons/tb";
 
 const Room = () => {
@@ -569,6 +569,11 @@ const Room = () => {
             opacity: messageBoxVisibility ? "1" : "0",
           }}
         >
+          <div className={styles.closeChatArea}>
+            <button onClick={() => setMessageBoxVisibility(false)}>
+              <IoCloseOutline />
+            </button>
+          </div>
           <div className={styles.messageList} ref={messageListRef}>
             {allMessages.length > 0 ? (
               allMessages.map((message, index) => {

@@ -298,7 +298,13 @@
       top: 0;
       opacity: 0;
       transition: all 0.3s ease;
+      z-index: 5;
       // border-radius: 20px 0 0 20px;
+      .closeChatArea {
+        position: absolute;
+        // top: 10px;
+        display: none;
+      }
       .messageList {
         display: flex;
         flex-direction: column;
@@ -438,6 +444,45 @@
           }
         }
       }
+      .chatArea {
+        // width: unset;
+        width: 350px;
+        .closeChatArea {
+          display: flex;
+          // position: unset;
+          height: max-content;
+          right: 0.5rem;
+          top: 0.5rem;
+          > button {
+            background-color: transparent;
+            // border: 1px solid rgb(231,231,231);
+            border: none;
+            > svg {
+              font-size: 2.5rem;
+            }
+            height: fit-content;
+          }
+        }
+        .messageList {
+          margin-top: 2.5rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  .room {
+    .roomBox {
+      .streamingArea {
+        .streamButtonsBox {
+          .streamButtons {
+            > button {
+              font-size: 1.8rem;
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -445,6 +490,16 @@
 @media (max-width: 500px) {
   .room {
     .roomBox {
+      .streamingArea {
+        .streamButtonsBox {
+          .streamButtons {
+            > button {
+              font-size: 1.5rem;
+            }
+          }
+        }
+      }
+
       .newStreamingArea {
         .peersStream {
           .newMyStream {
